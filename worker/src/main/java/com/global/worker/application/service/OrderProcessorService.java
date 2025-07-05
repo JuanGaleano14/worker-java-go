@@ -59,7 +59,12 @@ public class OrderProcessorService implements OrderProcessorPort {
                                             .collectList())
                             .flatMap(tuple -> {
                                 List<Product> enrichedProducts = tuple.getT2();
-                                Order enriched = new Order(null, msg.getOrderId(), msg.getCustomerId(), enrichedProducts);
+                                Order enriched = new Order(
+                                        null,
+                                        msg.getOrderId(),
+                                        msg.getCustomerId(),
+                                        enrichedProducts
+                                );
                                 return orderRepository.save(enriched)
                                         .doOnSuccess(o -> log.info("Pedido procesado: {}", o.getOrderId()))
                                         .then();
