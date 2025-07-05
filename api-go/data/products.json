@@ -1,0 +1,4 @@
+[
+  {"productId": "product-001", "name": "Laptop", "description": "Asus laptop", "price": 1200.0},
+  {"productId": "product-002", "name": "Mouse", "description": "Logitech mouse", "price": 25.5}
+]
