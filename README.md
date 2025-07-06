@@ -2,7 +2,7 @@
 
 **Autor:** Juan Pablo Galeano Salguero**
 
-## Tabla de Contenidos
+## Tabla de Contenido
 
 - [Descripción](#descripción)
 - [Estructura del Proyecto](#estructura-del-proyecto)

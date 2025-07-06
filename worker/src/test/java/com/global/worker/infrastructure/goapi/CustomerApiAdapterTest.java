@@ -21,7 +21,7 @@ class CustomerApiAdapterTest {
                 WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
         Customer expected = new Customer("customer-1", "Ana", "ana@mail.com", true);
-        // Mock chain
+
         when(client.get()).thenReturn(uriSpec);
         when(uriSpec.uri(anyString(), any(Object[].class))).thenReturn(headersSpec);
         when(headersSpec.retrieve()).thenReturn(responseSpec);
@@ -42,7 +42,7 @@ class CustomerApiAdapterTest {
         WebClient.RequestHeadersSpec headersSpec = (WebClient.RequestHeadersSpec) mock(
                 WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
-        // Mock chain
+
         when(client.get()).thenReturn(uriSpec);
         when(uriSpec.uri(anyString(), any(Object[].class))).thenReturn(headersSpec);
         when(headersSpec.retrieve()).thenReturn(responseSpec);
