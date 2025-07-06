@@ -35,4 +35,10 @@ public class RedisRetryHandlerAdapter implements RetryHandlerPort {
         String key = "retry:" + orderId;
         return redis.opsForValue().increment(key);
     }
+
+    @Override
+    public Mono<Void> saveFailedOrder(String orderId, String json) {
+        String key = "failed:" + orderId;
+        return redis.opsForValue().set(key, json).then();
+    }
 }

@@ -1,4 +1,4 @@
-# API Go - Ejemplo CRUD básico
+# API Go - Enriquecimiento de Datos
 
 Autor: Juan Pablo Galeano Salguero
 
@@ -38,13 +38,13 @@ api-go/
 
 ## Ejecución
 
-1. Instala las dependencias:
+1. Instalar las dependencias:
 
 ```sh
 go mod tidy
 ```
 
-2. Ejecuta la API:
+2. Ejecutar la API:
 
 ```sh
 go run main.go
@@ -68,6 +68,7 @@ go tool cover -html=coverage.out
 ```
 
 ## Notas
+
 - Los datos de clientes y productos se cargan dinámicamente desde archivos JSON.
 - El código incluye pruebas unitarias para los handlers, utilidades y modelos.
 - Puedes modificar los archivos en `data/` para cambiar la información servida por la API.
