@@ -1,6 +1,6 @@
 # Sistema de Procesamiento de Órdenes - Worker Java y Go
 
-**Autor:** Juan Pablo Galeano Salguero**
+**Autor:** Juan Pablo Galeano Salguero
 
 ## Tabla de Contenido
 
