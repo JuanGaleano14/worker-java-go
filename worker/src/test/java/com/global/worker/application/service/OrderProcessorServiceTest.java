@@ -32,16 +32,8 @@ class OrderProcessorServiceTest {
         productService = mock(ProductServicePort.class);
         orderRepository = mock(OrderRepositoryPort.class);
         retryHandler = mock(RetryHandlerPort.class);
-        service = new OrderProcessorService(customerService, productService, orderRepository, retryHandler);
-
-        java.lang.reflect.Field jsonUtilField;
-        try {
-            jsonUtilField = OrderProcessorService.class.getDeclaredField("jsonUtil");
-            jsonUtilField.setAccessible(true);
-            jsonUtilField.set(service, new JsonUtil());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        JsonUtil jsonUtil = new JsonUtil();
+        service = new OrderProcessorService(customerService, productService, orderRepository, retryHandler, jsonUtil);
     }
 
     @Test

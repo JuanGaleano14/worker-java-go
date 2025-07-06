@@ -32,16 +32,20 @@ public class OrderProcessorService implements OrderProcessorPort {
     private JsonUtil jsonUtil;
 
     private static final int MAX_RETRIES = 5;
+    private static final String ERROR_LOG_LOCK = "Error liberando lock para pedido {}: {}";
+    private static final String ERROR_PRODUCT = "ERROR";
 
     public OrderProcessorService(
             CustomerServicePort customerService,
             ProductServicePort productService,
             OrderRepositoryPort orderRepository,
-            RetryHandlerPort retryHandler) {
+            RetryHandlerPort retryHandler,
+            JsonUtil jsonUtil) {
         this.customerService = customerService;
         this.productService = productService;
         this.orderRepository = orderRepository;
         this.retryHandler = retryHandler;
+        this.jsonUtil = jsonUtil;
     }
 
     @Override
@@ -57,7 +61,7 @@ public class OrderProcessorService implements OrderProcessorPort {
                                         .doOnSuccess(v -> log.info(
                                                 "Lock liberado para pedido: {} (por fallo de adquisición)",
                                                 msg.getOrderId()))
-                                        .doOnError(e -> log.error("Error liberando lock para pedido {}: {}",
+                                        .doOnError(e -> log.error(ERROR_LOG_LOCK,
                                                 msg.getOrderId(), e.getMessage()))
                                         .then(handleRetry(msg, new RuntimeException(
                                                 "No se pudo adquirir el lock para el pedido: " + msg.getOrderId()))));
@@ -74,15 +78,16 @@ public class OrderProcessorService implements OrderProcessorPort {
                                                                 e.getMessage());
                                                         // Devolver un producto nulo para evitar cancelación
                                                         return Mono
-                                                                .just(new Product(id, "ERROR", "No disponible", 0.0));
+                                                                .just(new Product(id, ERROR_PRODUCT, "No disponible",
+                                                                        0.0));
                                                     }))
                                             .collectList())
                             .flatMap(tuple -> {
                                 List<Product> enrichedProducts = tuple.getT2();
                                 // Si algún producto es de error, lanzar excepción controlada
-                                if (enrichedProducts.stream().anyMatch(p -> "ERROR".equals(p.getName()))) {
+                                if (enrichedProducts.stream().anyMatch(p -> ERROR_PRODUCT.equals(p.getName()))) {
                                     String ids = enrichedProducts.stream()
-                                            .filter(p -> "ERROR".equals(p.getName()))
+                                            .filter(p -> ERROR_PRODUCT.equals(p.getName()))
                                             .map(Product::getProductId)
                                             .reduce((a, b) -> a + ", " + b).orElse("");
                                     return Mono.error(new RuntimeException("Productos no encontrados: " + ids));
@@ -99,12 +104,12 @@ public class OrderProcessorService implements OrderProcessorPort {
                             .onErrorResume(error -> retryHandler.releaseLock(msg.getOrderId())
                                     .doOnSuccess(v -> log.info("Lock liberado para pedido: {} (por error de consumo)",
                                             msg.getOrderId()))
-                                    .doOnError(e -> log.error("Error liberando lock para pedido {}: {}",
+                                    .doOnError(e -> log.error(ERROR_LOG_LOCK,
                                             msg.getOrderId(), e.getMessage()))
                                     .then(handleRetry(msg, error)))
                             .doFinally(sig -> retryHandler.releaseLock(msg.getOrderId())
                                     .doOnSuccess(v -> log.info("Lock liberado para pedido: {}", msg.getOrderId()))
-                                    .doOnError(e -> log.error("Error liberando lock para pedido {}: {}",
+                                    .doOnError(e -> log.error(ERROR_LOG_LOCK,
                                             msg.getOrderId(), e.getMessage()))
                                     .subscribe());
                 });

@@ -189,6 +189,10 @@ kafka-console-producer.sh --bootstrap-server localhost:9092 --topic orders
 }
 ```
 
+```bash
+{"orderId":"order-1","customerId":"customer-001","products":["product-001","product-002"]}
+```
+
 ### Consulta de Base de Datos MongoDB
 
 1. **Conectarse a MongoDB:**
