@@ -11,7 +11,6 @@ import com.global.worker.domain.port.output.ProductServicePort;
 import com.global.worker.domain.port.output.RetryHandlerPort;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -45,7 +44,7 @@ public class OrderProcessorService implements OrderProcessorPort {
     public Mono<Void> process(OrderMessage msg) {
         return retryHandler.acquireLock(msg.getOrderId())
                 .flatMap(acquired -> {
-                    if (!acquired) {
+                    if (Boolean.FALSE.equals(acquired)) {
                         log.warn("Pedido ya está siendo procesado: {}", msg.getOrderId());
                         return Mono.empty();
                     }
@@ -70,7 +69,7 @@ public class OrderProcessorService implements OrderProcessorPort {
                                         .then();
                             })
                             .onErrorResume(error -> handleRetry(msg, error))
-                            .doFinally(sig -> retryHandler.releaseLock(msg.getOrderId()).subscribe());
+                            .doFinally(sig -> retryHandler.releaseLock(msg.getOrderId()).subscribe()); // .subscribe() para Liberar el lock
                 });
     }
 
