@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  api-go:
+    build:
+      context: ./api-go
+    container_name: api-go
+    ports:
+      - 8080:8080
+    volumes:
+      - ./api-go/data:/app/data
+    networks:
+      - backend
+
+  worker:
+    build:
+      context: ./worker
+    container_name: worker-java
+    depends_on:
+      - kafka
+      - mongo
+      - redis
+      - api-go
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+    ports:
+      - 8181:8181
+    networks:
+      - backend
+
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    ports:
+      - 27018:27017
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - backend
+
+  kafka:
+    image: bitnami/kafka:3.6
+    container_name: kafka
+    ports:
+      - 9092:9092
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+    networks:
+      - backend
+
+  zookeeper:
+    image: bitnami/zookeeper:3.8
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - 6379:6379
+    networks:
+      - backend
+
+volumes:
+  mongo-data:
+
+networks:
+  backend:
+    driver: bridge
