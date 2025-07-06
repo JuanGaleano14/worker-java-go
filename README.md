@@ -1,6 +1,30 @@
 # Sistema de Procesamiento de Órdenes - Worker Java y Go
 
-**Autor:** Juan Pablo Galeano Salguero
+**Autor:** Juan Pablo Galeano Salguero**
+
+## Tabla de Contenidos
+
+- [Descripción](#descripción)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Tecnologías](#tecnologías)
+- [Requisitos Previos](#requisitos-previos)
+- [Instalación y Configuración](#instalación-y-configuración)
+  - [Clonar el repositorio](#1-clonar-el-repositorio)
+  - [Levantar todo el sistema con Docker Compose](#2-levantar-todo-el-sistema-con-docker-compose-recomendado)
+  - [Ejecución manual de servicios](#ejecución-manual-de-servicios-opcional)
+- [Uso del Sistema](#uso-del-sistema)
+  - [Endpoints de la API Go](#endpoints-de-la-api-go)
+  - [Envío de Mensajes a Kafka](#envío-de-mensajes-a-kafka)
+  - [Consulta de Base de Datos MongoDB](#consulta-de-base-de-datos-mongodb)
+- [Flujo](#flujo)
+- [Características](#características)
+  - [Sistema de Reintentos](#sistema-de-reintentos)
+  - [Programación Reactiva](#programación-reactiva)
+  - [Arquitectura Hexagonal](#arquitectura-hexagonal)
+- [Testing](#testing)
+- [Datos de Ejemplo](#datos-de-ejemplo)
+- [Posibles errores al ejecutar](#posibles-errores-al-ejecutar)
+- [Comandos](#comandos)
 
 ## Descripción
 
