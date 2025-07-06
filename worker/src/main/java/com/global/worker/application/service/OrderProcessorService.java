@@ -11,13 +11,11 @@ import com.global.worker.domain.port.output.ProductServicePort;
 import com.global.worker.domain.port.output.RetryHandlerPort;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.List;
 
 @Slf4j
 @Component
@@ -27,9 +25,7 @@ public class OrderProcessorService implements OrderProcessorPort {
     private final ProductServicePort productService;
     private final OrderRepositoryPort orderRepository;
     private final RetryHandlerPort retryHandler;
-
-    @Autowired
-    private JsonUtil jsonUtil;
+    private final JsonUtil jsonUtil;
 
     private static final int MAX_RETRIES = 5;
     private static final String ERROR_LOG_LOCK = "Error liberando lock para pedido {}: {}";
@@ -68,38 +64,44 @@ public class OrderProcessorService implements OrderProcessorPort {
                     }
 
                     return customerService.getCustomer(msg.getCustomerId())
-                            .filter(Customer::isActive)
-                            .switchIfEmpty(Mono.error(new IllegalStateException("Cliente inactivo o no encontrado")))
-                            .zipWith(
-                                    Flux.fromIterable(msg.getProducts())
-                                            .flatMap(id -> productService.getProduct(id)
-                                                    .onErrorResume(e -> {
-                                                        log.warn("Error al obtener producto {}: {}", id,
-                                                                e.getMessage());
-                                                        // Devolver un producto nulo para evitar cancelación
-                                                        return Mono
-                                                                .just(new Product(id, ERROR_PRODUCT, "No disponible",
-                                                                        0.0));
-                                                    }))
-                                            .collectList())
-                            .flatMap(tuple -> {
-                                List<Product> enrichedProducts = tuple.getT2();
-                                // Si algún producto es de error, lanzar excepción controlada
-                                if (enrichedProducts.stream().anyMatch(p -> ERROR_PRODUCT.equals(p.getName()))) {
-                                    String ids = enrichedProducts.stream()
-                                            .filter(p -> ERROR_PRODUCT.equals(p.getName()))
-                                            .map(Product::getProductId)
-                                            .reduce((a, b) -> a + ", " + b).orElse("");
-                                    return Mono.error(new RuntimeException("Productos no encontrados: " + ids));
+                            .onErrorResume(e -> {
+                                log.warn("Error al obtener cliente {}: {}", msg.getCustomerId(), e.getMessage());
+                                return Mono.just(new Customer(msg.getCustomerId(), "INACTIVO", "no-email", false));
+                            })
+                            .flatMap(customer -> {
+                                if (!customer.isActive()) {
+                                    return Mono.error(new IllegalStateException("Cliente inactivo o no encontrado"));
                                 }
-                                Order enriched = new Order(
-                                        null,
-                                        msg.getOrderId(),
-                                        msg.getCustomerId(),
-                                        enrichedProducts);
-                                return orderRepository.save(enriched)
-                                        .doOnSuccess(o -> log.info("Pedido procesado: {}", o.getOrderId()))
-                                        .then();
+                                return Flux.fromIterable(msg.getProducts())
+                                        .flatMap(id -> productService.getProduct(id)
+                                                .onErrorResume(e -> {
+                                                    log.warn("Error al obtener producto {}: {}", id,
+                                                            e.getMessage());
+                                                    // Devolver un producto nulo para evitar cancelación
+                                                    return Mono
+                                                            .just(new Product(id, ERROR_PRODUCT, "No disponible", 0.0));
+                                                }))
+                                        .collectList()
+                                        .flatMap(enrichedProducts -> {
+                                            // Si algún producto es de error, lanzar excepción controlada
+                                            if (enrichedProducts.stream()
+                                                    .anyMatch(p -> ERROR_PRODUCT.equals(p.getName()))) {
+                                                String ids = enrichedProducts.stream()
+                                                        .filter(p -> ERROR_PRODUCT.equals(p.getName()))
+                                                        .map(Product::getProductId)
+                                                        .reduce((a, b) -> a + ", " + b).orElse("");
+                                                return Mono.error(
+                                                        new RuntimeException("Productos no encontrados: " + ids));
+                                            }
+                                            Order enriched = new Order(
+                                                    null,
+                                                    msg.getOrderId(),
+                                                    msg.getCustomerId(),
+                                                    enrichedProducts);
+                                            return orderRepository.save(enriched)
+                                                    .doOnSuccess(o -> log.info("Pedido procesado: {}", o.getOrderId()))
+                                                    .then();
+                                        });
                             })
                             .onErrorResume(error -> retryHandler.releaseLock(msg.getOrderId())
                                     .doOnSuccess(v -> log.info("Lock liberado para pedido: {} (por error de consumo)",

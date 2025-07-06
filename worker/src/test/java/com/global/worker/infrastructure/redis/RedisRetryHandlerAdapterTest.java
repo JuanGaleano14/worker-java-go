@@ -39,4 +39,12 @@ class RedisRetryHandlerAdapterTest {
         when(redis.opsForValue().increment(any())).thenReturn(Mono.just(2L));
         StepVerifier.create(adapter.incrementRetry("order-1")).expectNext(2L).verifyComplete();
     }
+
+    @Test
+    void saveFailedOrder_success() {
+        when(redis.opsForValue().set(eq("failed:order-1"), eq("json-data"))).thenReturn(Mono.just(true));
+        StepVerifier.create(adapter.saveFailedOrder("order-1", "json-data"))
+                .verifyComplete();
+        verify(redis.opsForValue()).set("failed:order-1", "json-data");
+    }
 }
