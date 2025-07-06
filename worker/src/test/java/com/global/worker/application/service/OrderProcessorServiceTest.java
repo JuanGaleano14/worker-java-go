@@ -33,6 +33,15 @@ class OrderProcessorServiceTest {
         orderRepository = mock(OrderRepositoryPort.class);
         retryHandler = mock(RetryHandlerPort.class);
         service = new OrderProcessorService(customerService, productService, orderRepository, retryHandler);
+
+        java.lang.reflect.Field jsonUtilField;
+        try {
+            jsonUtilField = OrderProcessorService.class.getDeclaredField("jsonUtil");
+            jsonUtilField.setAccessible(true);
+            jsonUtilField.set(service, new JsonUtil());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -58,6 +67,7 @@ class OrderProcessorServiceTest {
         verify(retryHandler).releaseLock("order-1");
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void process_inactiveCustomer_shouldErrorAndRetry() {
         OrderMessage msg = new OrderMessage("order-2", "customer-2", List.of("product-1"));
@@ -65,20 +75,32 @@ class OrderProcessorServiceTest {
 
         when(retryHandler.acquireLock(any())).thenReturn(Mono.just(true));
         when(customerService.getCustomer("customer-2")).thenReturn(Mono.just(customer));
-        when(retryHandler.incrementRetry(any())).thenReturn(Mono.just(1L));
+
+        // Simula 5 reintentos
+        when(retryHandler.incrementRetry(any())).thenReturn(
+                Mono.just(1L), Mono.just(2L), Mono.just(3L), Mono.just(4L), Mono.just(5L));
         when(retryHandler.releaseLock(any())).thenReturn(Mono.empty());
+        when(retryHandler.saveFailedOrder(any(), any())).thenReturn(Mono.empty());
 
         StepVerifier.create(service.process(msg))
                 .verifyComplete();
 
-        verify(retryHandler).incrementRetry("order-2");
-        verify(retryHandler).releaseLock("order-2");
+        verify(retryHandler, times(5)).incrementRetry("order-2");
+        verify(retryHandler, atLeastOnce()).releaseLock("order-2");
+        verify(retryHandler).saveFailedOrder(eq("order-2"), any());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void process_lockNotAcquired_shouldNotProcess() {
         OrderMessage msg = new OrderMessage("order-3", "customer-3", List.of("product-1"));
         when(retryHandler.acquireLock(any())).thenReturn(Mono.just(false));
+        when(retryHandler.releaseLock(any())).thenReturn(Mono.empty());
+
+        // Simula 5 reintentos
+        when(retryHandler.incrementRetry(any())).thenReturn(
+                Mono.just(1L), Mono.just(2L), Mono.just(3L), Mono.just(4L), Mono.just(5L));
+        when(retryHandler.saveFailedOrder(any(), any())).thenReturn(Mono.empty());
 
         StepVerifier.create(service.process(msg))
                 .verifyComplete();

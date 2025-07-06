@@ -179,7 +179,7 @@ docker exec -it kafka bash
 kafka-console-producer.sh --bootstrap-server localhost:9092 --topic orders
 ```
 
-3. **Enviar un mensaje de orden (JSON):**
+3. **Enviar un mensaje de orden (Enviar JSON en una sola línea):**
 
 ```json
 {
@@ -226,6 +226,48 @@ db.orders.findOne({ orderId: "order-1" });
 ```javascript
 db.orders.countDocuments();
 ```
+
+## Consultar reintentos en Redis
+
+Para ver cuántos reintentos lleva cada orden en Redis:
+
+1. Ingresar al contenedor de Redis:
+
+```bash
+docker exec -it redis redis-cli
+```
+
+2. Listra todas las órdenes con reintentos:
+
+```bash
+keys retry:*
+```
+
+3. Consultar el número de reintentos para una orden específica:
+
+```bash
+get retry:<orderId>
+```
+
+El resultado será el número de reintentos acumulados para esa orden.
+
+## Consultar mensajes fallidos en Redis
+
+Cuando una orden alcanza el máximo de reintentos, el mensaje fallido se almacena en Redis bajo la clave `failed:<orderId>`, junto con el motivo del fallo y el número de reintentos.
+
+1. Lista todas las órdenes fallidas:
+
+```bash
+keys failed:*
+```
+
+2. Consulta el mensaje fallido para una orden específica:
+
+```bash
+get failed:<orderId>
+```
+
+El resultado será un JSON con la orden, el error y el número de reintentos.
 
 ## Flujo
 
