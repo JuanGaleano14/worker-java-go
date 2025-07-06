@@ -316,6 +316,8 @@ go test -cover ./...
 ```bash
 cd worker
 ./gradlew test
+(En caso de no funcionar ./gradlew)
+gradlew test 
 ```
 
 ### Ver logs de los contenedores
@@ -324,6 +326,8 @@ cd worker
 docker logs kafka
 docker logs mongo
 docker logs redis
+docker logs -f api-go
+docker logs -f worker-java
 ```
 
 ## Datos de Ejemplo
