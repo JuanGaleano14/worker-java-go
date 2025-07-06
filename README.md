@@ -16,6 +16,7 @@
   - [Endpoints de la API Go](#endpoints-de-la-api-go)
   - [Envío de Mensajes a Kafka](#envío-de-mensajes-a-kafka)
   - [Consulta de Base de Datos MongoDB](#consulta-de-base-de-datos-mongodb)
+  - [Consultar reintentos en Redis](#consultar-reintentos-en-redis)
 - [Flujo](#flujo)
 - [Características](#características)
   - [Sistema de Reintentos](#sistema-de-reintentos)
